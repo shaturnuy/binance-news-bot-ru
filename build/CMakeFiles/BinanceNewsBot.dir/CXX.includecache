@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/vlad/Projects/BinanceNews/src/main.cpp
+iostream
+-
+string
+-
+vector
+-
+exception
+-
+functional
+-
+curl/curl.h
+-
+tgbot/tgbot.h
+-
+
