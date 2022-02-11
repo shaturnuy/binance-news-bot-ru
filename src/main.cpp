@@ -7,86 +7,37 @@
 #include <functional>
 
 #include <curl/curl.h>
-
 #include <tgbot/tgbot.h>
 
-std::vector<std::string> botCommandsList = {"start", "site", "latest_news"};
+static const int SizeOfLatestNewsBuffer = 3;
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
+std::vector<std::string> botCommandsList = {"start", "site", "latest_news"};
 
 void botCommandStart(TgBot::Bot &bot);
 void botCommandSite(TgBot::Bot &bot);
 void botCommandLatestNews(TgBot::Bot &bot, std::string &latestNews);
 
-void checkNews(TgBot::Bot &bot);
+std::string getHtml();
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
+std::string parseHtml(std::string &htmlSource, std::string forFind, size_t &currentPos);
+void parser(std::string& htmlSource, std::vector<std::pair<std::string, std::string>> &latestNewsBuffer);
+void checkNews(TgBot::Bot &bot, std::vector<std::pair<std::string, std::string>> &savedLatestNewsBuffer);
 
 int main()
 {
-    std::string token = "token";
+    std::string token = "5085136244:AAEseAOugRJvOzlNHEVtNhkE8XTvi-99qwE";
     TgBot::Bot bot(token);
 
-    CURL *curl;
-    CURLcode res;
-    std::string readBuffer;
+    std::vector<std::pair<std::string, std::string>> latestNewsBuffer;
+    std::string htmlSource = getHtml();
 
-    curl = curl_easy_init();
-    if(curl)
-    {
-        curl_easy_setopt(curl, CURLOPT_URL, "https://www.binance.com/ru/support/announcement/c-48?navId=48");
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-    }
-
-    std::vector<std::string> latestNewsBuffer;
-    std::string forFind = "code\":\"";
-    size_t pos = readBuffer.find(forFind, 0);
-    int count = 0;
-    while (count < 3)
-    {
-        size_t temp = pos + 7;
-        latestNewsBuffer.push_back("");
-        while (readBuffer[temp] != '\"')
-        {
-            latestNewsBuffer[count] += readBuffer[temp];
-            temp++;
-        }
-        while (readBuffer[temp] != '\"')
-        {
-            latestNewsBuffer[count] += readBuffer[temp];
-            temp++;
-        }
-        std::cout << latestNewsBuffer[0] << std::endl;
-        std::string tempFind = "title\":\"";
-        std::string tempCout = "";
-        {
-            pos = readBuffer.find(tempFind, pos + 1);
-            size_t temp = pos + 8;
-            while (readBuffer[temp] != '\"')
-            {
-                tempCout += readBuffer[temp];
-                temp++;
-            }
-            while (readBuffer[temp] != '\"')
-            {
-                tempCout += readBuffer[temp];
-                temp++;
-            }
-            std::cout << tempCout << std::endl;
-        }
-        pos = readBuffer.find(forFind, pos + 1);
-        count++;
-    }
-    // std::cout << readBuffer << std::endl;
+    parser(htmlSource, latestNewsBuffer);
+    // std::cout << htmlSource << std::endl;
+    std::cout << latestNewsBuffer[0].first << " : " << latestNewsBuffer[0].second << std::endl;
 
     botCommandStart(bot);
     botCommandSite(bot);
-    botCommandLatestNews(bot, latestNewsBuffer[0]);
+    botCommandLatestNews(bot, latestNewsBuffer[0].first);
 
     bot.getEvents().onAnyMessage([&bot](TgBot::Message::Ptr message)
     {
@@ -101,7 +52,7 @@ int main()
 
     // for (auto i = 0; i < 3; i++)
     // {
-    //     bot.getApi().sendMessage(id, "test 30s");
+    //     bot.getApi().sendMessage(-1001311080502, "test 30s");
     //     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
     // }
 
@@ -150,7 +101,55 @@ void botCommandLatestNews(TgBot::Bot &bot, std::string &latestNews)
     });
 }
 
-void checkNews(TgBot::Bot &bot)
+std::string getHtml()
 {
-    
+    CURL *curl;
+    CURLcode res;
+    std::string htmlBuffer;
+
+    curl = curl_easy_init();
+    if(curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, "https://www.binance.com/ru/support/announcement/c-48?navId=48");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &htmlBuffer);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+    }
+    return htmlBuffer;
+}
+
+std::string parseHtml(std::string &htmlSource, std::string forFind, size_t &currentPos)
+{
+    std::string resultText = "";
+    forFind += "\":\"";
+    currentPos = htmlSource.find(forFind, currentPos + 1) + forFind.size();
+
+    while (htmlSource[currentPos] != '\"')
+        resultText += htmlSource[currentPos++];
+
+    return resultText;
+}
+
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+void parser(std::string& htmlSource, std::vector<std::pair<std::string, std::string>> &latestNewsBuffer)
+{
+    size_t parserPos = 0;
+    for (int currentNews = 0; currentNews < SizeOfLatestNewsBuffer; currentNews++)
+    {
+        std::string currentNewslink = parseHtml(htmlSource, "code", parserPos);
+        std::string currentNewstitle = parseHtml(htmlSource, "title", parserPos);
+        latestNewsBuffer.push_back(std::make_pair(currentNewslink, currentNewstitle));
+    }
+}
+
+void checkNews(TgBot::Bot &bot, std::vector<std::pair<std::string, std::string>> &savedLatestNewsBuffer)
+{
+    std::string htmlSource = getHtml();
+    parser(htmlSource, savedLatestNewsBuffer);
 }
