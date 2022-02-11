@@ -26,7 +26,7 @@ void checkNews(TgBot::Bot &bot);
 
 int main()
 {
-    std::string token = "5085136244:AAEseAOugRJvOzlNHEVtNhkE8XTvi-99qwE";
+    std::string token = "token";
     TgBot::Bot bot(token);
 
     CURL *curl;
@@ -101,7 +101,7 @@ int main()
 
     // for (auto i = 0; i < 3; i++)
     // {
-    //     bot.getApi().sendMessage(-1001311080502, "test 30s");
+    //     bot.getApi().sendMessage(id, "test 30s");
     //     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
     // }
 
