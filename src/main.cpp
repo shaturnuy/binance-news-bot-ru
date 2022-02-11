@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <thread>
+#include <chrono>
 #include <functional>
 
 #include <curl/curl.h>
@@ -20,9 +22,11 @@ void botCommandStart(TgBot::Bot &bot);
 void botCommandSite(TgBot::Bot &bot);
 void botCommandLatestNews(TgBot::Bot &bot, std::string &latestNews);
 
+void checkNews(TgBot::Bot &bot);
+
 int main()
 {
-    std::string token = "token";
+    std::string token = "5085136244:AAEseAOugRJvOzlNHEVtNhkE8XTvi-99qwE";
     TgBot::Bot bot(token);
 
     CURL *curl;
@@ -43,7 +47,7 @@ int main()
     std::string forFind = "code\":\"";
     size_t pos = readBuffer.find(forFind, 0);
     int count = 0;
-    while (count < 3 || pos != std::string::npos)
+    while (count < 3)
     {
         size_t temp = pos + 7;
         latestNewsBuffer.push_back("");
@@ -57,10 +61,27 @@ int main()
             latestNewsBuffer[count] += readBuffer[temp];
             temp++;
         }
+        std::cout << latestNewsBuffer[0] << std::endl;
+        std::string tempFind = "title\":\"";
+        std::string tempCout = "";
+        {
+            pos = readBuffer.find(tempFind, pos + 1);
+            size_t temp = pos + 8;
+            while (readBuffer[temp] != '\"')
+            {
+                tempCout += readBuffer[temp];
+                temp++;
+            }
+            while (readBuffer[temp] != '\"')
+            {
+                tempCout += readBuffer[temp];
+                temp++;
+            }
+            std::cout << tempCout << std::endl;
+        }
         pos = readBuffer.find(forFind, pos + 1);
         count++;
     }
-    bot.getApi().sendMessage("id", "test");
     // std::cout << readBuffer << std::endl;
 
     botCommandStart(bot);
@@ -75,9 +96,14 @@ int main()
                 return;
         }
 
-        bot.getApi().sendMessage(message->chat->id, "Я всего лишь бот, вы слишком многого от меня хотите :(");
+        // bot.getApi().sendMessage(message->chat->id, "Я всего лишь бот, вы слишком многого от меня хотите :(");
     });
 
+    // for (auto i = 0; i < 3; i++)
+    // {
+    //     bot.getApi().sendMessage(-1001311080502, "test 30s");
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+    // }
 
     try {
         printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
@@ -122,4 +148,9 @@ void botCommandLatestNews(TgBot::Bot &bot, std::string &latestNews)
     {
         bot.getApi().sendMessage(message->chat->id, "https://www.binance.com/ru/support/announcement/" + latestNews);
     });
+}
+
+void checkNews(TgBot::Bot &bot)
+{
+    
 }

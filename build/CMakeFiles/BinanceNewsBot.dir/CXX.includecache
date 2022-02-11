@@ -15,6 +15,10 @@ vector
 -
 exception
 -
+thread
+-
+chrono
+-
 functional
 -
 curl/curl.h
