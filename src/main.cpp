@@ -21,11 +21,11 @@ std::string getHtml();
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
 std::string parseHtml(std::string &htmlSource, std::string forFind, size_t &currentPos);
 void parser(std::string& htmlSource, std::vector<std::pair<std::string, std::string>> &latestNewsBuffer);
-void checkNews(TgBot::Bot &bot, std::vector<std::pair<std::string, std::string>> &savedLatestNewsBuffer);
+void checkNews(TgBot::Bot &bot, std::vector<std::pair<std::string, std::string>> & savedLatestNewsBuffer);
 
 int main()
 {
-    std::string token = "5085136244:AAEseAOugRJvOzlNHEVtNhkE8XTvi-99qwE";
+    std::string token = "token";
     TgBot::Bot bot(token);
 
     std::vector<std::pair<std::string, std::string>> latestNewsBuffer;
@@ -52,7 +52,7 @@ int main()
 
     // for (auto i = 0; i < 3; i++)
     // {
-    //     bot.getApi().sendMessage(-1001311080502, "test 30s");
+    //     bot.getApi().sendMessage(-id, "test 30s");
     //     std::this_thread::sleep_for(std::chrono::milliseconds(30000));
     // }
 
