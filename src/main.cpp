@@ -15,7 +15,7 @@ std::vector<std::string> botCommandsList = {"start", "site", "latest_news"};
 
 void botCommandStart(TgBot::Bot &bot);
 void botCommandSite(TgBot::Bot &bot);
-void botCommandLatestNews(TgBot::Bot &bot, std::string &latestNews);
+void botCommandLatestNews(TgBot::Bot &bot, std::pair<std::string, std::string> &latestNews);
 
 std::string getHtml();
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
@@ -37,7 +37,7 @@ int main()
 
     botCommandStart(bot);
     botCommandSite(bot);
-    botCommandLatestNews(bot, latestNewsBuffer[0].first);
+    botCommandLatestNews(bot, latestNewsBuffer[0]);
 
     bot.getEvents().onAnyMessage([&bot](TgBot::Message::Ptr message)
     {
@@ -64,6 +64,7 @@ int main()
         while (true) {
             printf("Long poll started\n");
             longPoll.start();
+            checkNews(bot, latestNewsBuffer);
         }
     } catch (std::exception& e) {
         printf("error: %s\n", e.what());
@@ -92,12 +93,11 @@ void botCommandSite(TgBot::Bot &bot)
     });
 }
 
-void botCommandLatestNews(TgBot::Bot &bot, std::string &latestNews)
+void botCommandLatestNews(TgBot::Bot &bot, std::pair<std::string, std::string> &latestNews)
 {
-    // std::cout << latestNews;
     bot.getEvents().onCommand("latest_news", [&bot, &latestNews](TgBot::Message::Ptr message)
     {
-        bot.getApi().sendMessage(message->chat->id, "https://www.binance.com/ru/support/announcement/" + latestNews);
+        bot.getApi().sendMessage(message->chat->id, latestNews.second + "\nhttps://www.binance.com/ru/support/announcement/" + latestNews.first);
     });
 }
 
@@ -150,6 +150,20 @@ void parser(std::string& htmlSource, std::vector<std::pair<std::string, std::str
 
 void checkNews(TgBot::Bot &bot, std::vector<std::pair<std::string, std::string>> &savedLatestNewsBuffer)
 {
+    std::vector<std::pair<std::string, std::string>> tempNewsBuffer;
     std::string htmlSource = getHtml();
-    parser(htmlSource, savedLatestNewsBuffer);
+    parser(htmlSource, tempNewsBuffer);
+
+    if (tempNewsBuffer[0] != savedLatestNewsBuffer[0])
+    {
+        bot.getApi().sendMessage(-id,
+        tempNewsBuffer[0].first + "\nhttps://www.binance.com/ru/support/announcement/" + tempNewsBuffer[0].first);
+    }
+
+    for (int currentNews = 0; currentNews != SizeOfLatestNewsBuffer; currentNews++)
+    {
+        savedLatestNewsBuffer[currentNews] = tempNewsBuffer[currentNews];
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 }
